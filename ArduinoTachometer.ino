@@ -2,6 +2,7 @@ int previousSensorValue = -1;
 bool dataCollectionState = false;
 bool endDataState = false;
 unsigned long dataStartTime = 0;
+const unsigned long dataCollectionTime = 60000;
 const int ANALOG_HIGH = 1023;
 const int DIGITAL_LIGHT_SENSOR_PIN = 0;
 const int ANALOG_BUTTON_OUT_PIN = 1;
@@ -15,41 +16,28 @@ void setup() {
   //Begin sending output at 9600 baud
   Serial.begin(9600);
 
-  sendCSVHeader();
-
-  // On startup, turn sensor off
-  //setLightSensor(dataCollectionState);
 }
 
 void loop() {
   // Code here will check for for the start/stop collecting-data event and
   // set the power to the LED transistor appropriately (for now, the default is always on)
-  if (analogRead(ANALOG_BUTTON_OUT_PIN) == ANALOG_HIGH) {
+  if ((analogRead(ANALOG_BUTTON_OUT_PIN) == ANALOG_HIGH) && !dataCollectionState) {
     setIndicatorLight(true);
-  } else {
-    setIndicatorLight(false);
+    startDataCollectionTimer();
+    sendCSVHeader();
+    dataCollectionState = true;
   }
-  delay(5);
-  /*
-    // If we haven't started collecting
-    if (!dataCollectionState) {
-      // Check for the button press
-      Serial.println("dataCollectionState = FALSE");
-      if (digitalRead(POWER_BUTTON_OUT_PIN) == HIGH) {
-        // Start light sensor
-        setLightSensor(true);
-        //start timer
-        startDataCollectionTimer();
-        // set data collection flag
-        dataCollectionState = true;
-      }
-    } else if (!endDataState) {
-      // check timer
-      checkTime();
-      //Read output from Light Sensor and write to serial port
-      previousSensorValue = writeSensorValue(analogRead(A0));
+
+  // If we have started collecting data and haven't finished
+  if ((dataCollectionState) && (!endDataState)) {
+    //Read output from Light Sensor and write to serial port
+    previousSensorValue = writeSensorValue(analogRead(A0));
+    // check timer
+    if (isTestComplete()) {
+      setEndState();
     }
-  */
+  }
+  delay(10);
 }
 /************************************* End Main Body **************************************************************/
 
@@ -66,13 +54,14 @@ void startDataCollectionTimer() {
   dataStartTime = millis();
 }
 
-bool checkTime() {
-  if (millis() > dataStartTime + 60000) {
-    setIndicatorLight(false);
-    endDataState = true;
-    return endDataState;
-  }
-  return false;
+bool isTestComplete() {
+  return (millis() > dataStartTime + dataCollectionTime);
+}
+
+bool setEndState() {
+  setIndicatorLight(false);
+  endDataState = true;
+  return endDataState;
 }
 
 void printSensorValue(int sensorValue) {
