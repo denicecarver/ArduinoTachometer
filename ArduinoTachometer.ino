@@ -4,9 +4,8 @@ bool endDataState = false;
 unsigned long dataStartTime = 0;
 const unsigned long dataCollectionTime = 60000;
 const int ANALOG_HIGH = 1023;
-const int DIGITAL_LIGHT_SENSOR_PIN = 0;
+const int ANALOG_LIGHT_SENSOR_OUTPUT_PIN = 0;
 const int ANALOG_BUTTON_OUT_PIN = 1;
-const int DIGITAL_INDICATOR_PIN = 2;
 const int TOLERANCE = 1;
 
 /************************************* Main Body **************************************************************/
@@ -22,7 +21,6 @@ void loop() {
   // Code here will check for for the start/stop collecting-data event and
   // set the power to the LED transistor appropriately (for now, the default is always on)
   if ((analogRead(ANALOG_BUTTON_OUT_PIN) == ANALOG_HIGH) && !dataCollectionState) {
-    setIndicatorLight(true);
     startDataCollectionTimer();
     sendCSVHeader();
     dataCollectionState = true;
@@ -31,7 +29,7 @@ void loop() {
   // If we have started collecting data and haven't finished
   if ((dataCollectionState) && (!endDataState)) {
     //Read output from Light Sensor and write to serial port
-    previousSensorValue = writeSensorValue(analogRead(A0));
+    previousSensorValue = writeSensorValue(analogRead(ANALOG_LIGHT_SENSOR_OUTPUT_PIN));
     // check timer
     if (isTestComplete()) {
       setEndState();
@@ -42,9 +40,8 @@ void loop() {
 /************************************* End Main Body **************************************************************/
 
 void initializePins() {
-  pinMode(DIGITAL_LIGHT_SENSOR_PIN, OUTPUT);
-  //pinMode(POWER_BUTTON_OUT_PIN, INPUT);
-  pinMode(DIGITAL_INDICATOR_PIN, OUTPUT);
+  pinMode(ANALOG_BUTTON_OUT_PIN, INPUT);
+  pinMode(ANALOG_LIGHT_SENSOR_OUTPUT_PIN, INPUT);
 }
 void sendCSVHeader() {
   Serial.println("Voltage,Time Of Measurement");
@@ -59,8 +56,8 @@ bool isTestComplete() {
 }
 
 bool setEndState() {
-  setIndicatorLight(false);
   endDataState = true;
+  Serial.println("EOF");
   return endDataState;
 }
 
@@ -73,21 +70,10 @@ void printSensorValue(int sensorValue) {
 void setLightSensor(bool powerState) {
   if (powerState) {
     if (!endDataState) {
-      digitalWrite(DIGITAL_LIGHT_SENSOR_PIN, HIGH);
       dataCollectionState = true;
-      setIndicatorLight(powerState);
     }
   } else {
-    digitalWrite(DIGITAL_LIGHT_SENSOR_PIN, LOW);
     dataCollectionState = false;
-  }
-}
-
-void setIndicatorLight(bool powerState) {
-  if (powerState) {
-    digitalWrite(DIGITAL_INDICATOR_PIN, HIGH);
-  } else {
-    digitalWrite(DIGITAL_INDICATOR_PIN, LOW);
   }
 }
 
