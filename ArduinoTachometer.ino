@@ -2,7 +2,7 @@ int previousSensorValue = -1;
 bool dataCollectionState = false;
 bool endDataState = false;
 unsigned long dataStartTime = 0;
-const unsigned long dataCollectionTime = 60000;
+const unsigned long dataCollectionTime = 60000; //milliseconds (60 seconds)
 const int ANALOG_HIGH = 1023;
 const int ANALOG_LIGHT_SENSOR_OUTPUT_PIN = 0;
 const int ANALOG_BUTTON_OUT_PIN = 1;
@@ -29,7 +29,7 @@ void loop() {
   // If we have started collecting data and haven't finished
   if ((dataCollectionState) && (!endDataState)) {
     //Read output from Light Sensor and write to serial port
-    previousSensorValue = writeSensorValue(analogRead(ANALOG_LIGHT_SENSOR_OUTPUT_PIN));
+    previousSensorValue = printSensorValueWithinTolerance(analogRead(ANALOG_LIGHT_SENSOR_OUTPUT_PIN));
     // check timer
     if (isTestComplete()) {
       setEndState();
@@ -39,34 +39,42 @@ void loop() {
 }
 /************************************* End Main Body **************************************************************/
 
+// Sets the Arduino pins for input
 void initializePins() {
   pinMode(ANALOG_BUTTON_OUT_PIN, INPUT);
   pinMode(ANALOG_LIGHT_SENSOR_OUTPUT_PIN, INPUT);
 }
+
+//Prints header for CSV file
 void sendCSVHeader() {
   Serial.println("Voltage,Time Of Measurement");
 }
 
+// Records start time for data collection
 void startDataCollectionTimer() {
   dataStartTime = millis();
 }
 
+//Checks is current time is beyond the start time by the amount dataCollectionTime
 bool isTestComplete() {
   return (millis() > dataStartTime + dataCollectionTime);
 }
 
+// Marks the end of the file and sets the end-of-data-collection state flag to true
 bool setEndState() {
   endDataState = true;
   Serial.println("EOF");
   return endDataState;
 }
 
+// Prints the current sensor value along with a timestamp in microseconds
 void printSensorValue(int sensorValue) {
   Serial.print(sensorValue);
   Serial.print(",");
   Serial.println(micros());
 }
 
+// switches data collection state between off and on
 void setLightSensor(bool powerState) {
   if (powerState) {
     if (!endDataState) {
@@ -77,7 +85,8 @@ void setLightSensor(bool powerState) {
   }
 }
 
-int writeSensorValue(int sensorValue) {
+// Prints the sensor value if it is outside the window of tolerance 
+int printSensorValueWithinTolerance(int sensorValue) {
   // If the value differs from the previous value by the amount TOLERANCE, print the new value
   if ((abs(sensorValue - previousSensorValue)) > TOLERANCE) {
     printSensorValue(sensorValue);
