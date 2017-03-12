@@ -2,7 +2,7 @@ int previousSensorValue = -1;
 bool dataCollectionState = false;
 bool endDataState = false;
 unsigned long dataStartTime = 0;
-const unsigned long dataCollectionTime = 60000; //milliseconds (60 seconds)
+const unsigned long dataCollectionTime = 60000; // 60000 milliseconds == 60 seconds
 const int ANALOG_HIGH = 1023;
 const int ANALOG_LIGHT_SENSOR_OUTPUT_PIN = 0;
 const int ANALOG_BUTTON_OUT_PIN = 1;
@@ -67,11 +67,11 @@ bool setEndState() {
   return endDataState;
 }
 
-// Prints the current sensor value along with a timestamp in microseconds
+// Prints the current sensor value along with a timestamp in milliseconds
 void printSensorValue(int sensorValue) {
   Serial.print(sensorValue);
   Serial.print(",");
-  Serial.println(micros());
+  Serial.println(millis());
 }
 
 // switches data collection state between off and on
